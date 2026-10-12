@@ -1,88 +1,55 @@
-import { useId, useMemo, useState } from 'react'
+import { useEffect } from 'react'
+import { AnimatePresence } from 'framer-motion'
+import { BrowserRouter, Outlet, Route, Routes, useLocation } from 'react-router-dom'
+import { BookingProvider } from './context/BookingContext'
+import Navbar from './components/Navbar'
+import Footer from './components/Footer'
+import Home from './pages/Home'
+import Movies from './pages/Movies'
+import MovieDetails from './pages/MovieDetails'
+import SeatSelection from './pages/SeatSelection'
+import Checkout from './pages/Checkout'
+import Confirmation from './pages/Confirmation'
+import AuthPage from './pages/AuthPage'
+import OpeningSequence from './components/OpeningSequence'
 import './App.css'
+import './premium.css'
 
-const movies = [
-  { id: 1, title: 'Dune: Part Two', genre: 'Sci-Fi', rating: '8.9', duration: '2h 46m', language: 'English', image: 'photo-1446776811953-b23d57bd21aa', color: '#d8a15d', tag: 'NOW SHOWING', description: 'Paul Atreides unites with Chani and the Fremen while seeking revenge against the conspirators who destroyed his family.' },
-  { id: 2, title: 'The Grand Budapest', genre: 'Comedy', rating: '8.4', duration: '1h 39m', language: 'English', image: 'photo-1519608487953-e999c86e7455', color: '#e6939c', tag: 'FAN FAVOURITE', description: 'A legendary concierge and his protégé become wrapped up in a theft, a family fortune, and a changing world.' },
-  { id: 3, title: 'Past Lives', genre: 'Romance', rating: '8.1', duration: '1h 45m', language: 'English', image: 'photo-1470770841072-f978cf4d019e', color: '#9b9fd9', tag: 'CRITIC’S PICK', description: 'Two deeply connected childhood friends are wrested apart after one family emigrates from South Korea.' },
-  { id: 4, title: 'Oppenheimer', genre: 'Drama', rating: '8.7', duration: '3h 00m', language: 'English', image: 'photo-1519681393784-d120267933ba', color: '#d79063', tag: 'NOW SHOWING', description: 'The story of J. Robert Oppenheimer and his role in the development of the atomic bomb.' },
-  { id: 5, title: 'Into the Wild', genre: 'Adventure', rating: '8.2', duration: '2h 28m', language: 'English', image: 'photo-1500530855697-b586d89ba3ee', color: '#76a78a', tag: 'LIMITED RELEASE', description: 'A young graduate leaves everything behind and journeys alone into the Alaskan wilderness.' },
-  { id: 6, title: 'Midnight in Paris', genre: 'Fantasy', rating: '7.7', duration: '1h 34m', language: 'English', image: 'photo-1519608487953-e999c86e7455', color: '#7375b6', tag: 'NOW SHOWING', description: 'A screenwriter finds himself mysteriously transported to another era each night in Paris.' },
-]
-const genres = ['All films', 'Sci-Fi', 'Drama', 'Romance', 'Comedy', 'Adventure', 'Fantasy']
-const poster = (movie, width = 640) => `https://images.unsplash.com/${movie.image}?auto=format&fit=crop&w=${width}&q=85`
-const Icon = ({ name, size = 18 }) => {
-  const paths = { search: <><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></>, pin: <><path d="M20 10c0 5-8 12-8 12S4 15 4 10a8 8 0 1 1 16 0Z"/><circle cx="12" cy="10" r="2.5"/></>, star: <path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2-5.6-3-5.6 3 1.1-6.2L3 9.6l6.2-.9L12 3Z"/>, arrow: <><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></>, close: <><path d="m18 6-12 12"/><path d="m6 6 12 12"/></>, ticket: <><path d="M2 9a3 3 0 0 0 0 6v5h20v-5a3 3 0 0 1 0-6V4H2v5Z"/><path d="M13 5v2m0 4v2m0 4v2"/></>, film: <><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M7 3v18M3 8h4m-4 5h4m-4 5h4M17 3v18m0-13h4m-4 5h4m-4 5h4"/></> }
-  return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{paths[name]}</svg>
+function ScrollToTop() {
+  const { pathname } = useLocation()
+  useEffect(() => { window.scrollTo({ top: 0, behavior: 'instant' }) }, [pathname])
+  return null
+}
+
+function SiteLayout() {
+  const location = useLocation()
+  return <div className="app-shell">
+    <ScrollToTop/>
+    <Navbar/>
+    <AnimatePresence mode="wait"><div className="site-content" key={`${location.pathname}${location.search}`}><Outlet/></div></AnimatePresence>
+    <Footer/>
+  </div>
+}
+
+function AuthLayout({ children }) {
+  const location = useLocation()
+  return <div className="app-shell auth-shell"><ScrollToTop/><AnimatePresence mode="wait"><div key={location.pathname}>{children}</div></AnimatePresence></div>
 }
 
 function App() {
-  const [view, setView] = useState('home')
-  const [selected, setSelected] = useState(movies[0])
-  const [genre, setGenre] = useState('All films')
-  const [query, setQuery] = useState('')
-  const [date, setDate] = useState(0)
-  const [showtime, setShowtime] = useState('7:30 PM')
-  const [theatre, setTheatre] = useState('The Lumière — Downtown')
-  const [seats, setSeats] = useState([])
-  const [booking, setBooking] = useState(null)
-  const [auth, setAuth] = useState('')
-  const [mobileMenu, setMobileMenu] = useState(false)
-  const bookingId = useId()
-  const filtered = useMemo(() => movies.filter(m => (genre === 'All films' || m.genre === genre) && m.title.toLowerCase().includes(query.toLowerCase())), [genre, query])
-  const openMovie = movie => { setSelected(movie); setSeats([]); setView('detail'); window.scrollTo({ top: 0, behavior: 'smooth' }) }
-  const startBooking = movie => { setSelected(movie || selected); setView('booking'); window.scrollTo({ top: 0, behavior: 'smooth' }) }
-  const toggleSeat = seat => setSeats(prev => prev.includes(seat) ? prev.filter(s => s !== seat) : prev.length < 8 ? [...prev, seat] : prev)
-  const reserve = () => { setBooking({ movie: selected, seats: [...seats], showtime, theatre, date: dates[date].full, code: `RH-${bookingId.replace(/:/g, '').slice(-6).toUpperCase()}` }); setView('confirmation'); window.scrollTo({ top: 0, behavior: 'smooth' }) }
-  const dates = Array.from({ length: 5 }, (_, i) => { const d = new Date(); d.setDate(d.getDate() + i); return { day: d.toLocaleDateString('en-US', { weekday: 'short' }).toUpperCase(), num: d.getDate(), full: d.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' }) } })
-  const scrollFilms = () => document.getElementById('films')?.scrollIntoView({ behavior: 'smooth' })
-
-  return <div className="app-shell">
-    <header className="topbar"><a className="brand" href="#home" onClick={e => { e.preventDefault(); setView('home') }}><span className="brand-mark"><Icon name="film" size={19}/></span><span>reel<span className="brand-dot">.</span>house</span></a>
-      <nav className={mobileMenu ? 'nav-links nav-open' : 'nav-links'}><button className={view === 'home' ? 'nav-active' : ''} onClick={() => { setView('home'); setMobileMenu(false) }}>Discover</button><button onClick={scrollFilms}>Now showing</button><button onClick={() => setAuth('Sign in')}>My tickets</button></nav>
-      <div className="nav-actions"><button className="location-pill"><Icon name="pin" size={16}/><span>New York, NY</span><span className="chevron">⌄</span></button><button className="signin" onClick={() => setAuth('Sign in')}>Sign in</button><button className="avatar" onClick={() => setAuth('Create account')}>J</button></div>
-      <button className="menu-button" aria-label="Toggle menu" onClick={() => setMobileMenu(!mobileMenu)}>☰</button>
-    </header>
-
-    {view === 'home' && <main>
-      <section className="hero"><div className="hero-image"/><div className="hero-shade"/><div className="hero-copy"><div className="eyebrow"><span className="live-dot"/> THE BIG SCREEN IS CALLING</div><h1>Make tonight<br/>a <em>movie night.</em></h1><p>Find your next favourite. Book a seat. Let the story take you somewhere.</p><div className="hero-buttons"><button className="primary-button" onClick={scrollFilms}>Explore films <Icon name="arrow" size={17}/></button><button className="text-button" onClick={() => openMovie(movies[0])}>Now showing <span>↗</span></button></div></div><div className="hero-caption"><span>01 <i/> 04</span><span className="caption-title">THE LAST FRONTIER · IN CINEMAS NOW</span><span>SCROLL TO EXPLORE ↓</span></div><div className="hero-side">CINEMA, REIMAGINED · EST. 2024</div></section>
-      <section className="trust-strip"><div><span className="trust-number">12<span>+</span></span><span>films showing<br/>this week</span></div><div><span className="trust-number">48</span><span>independent<br/>cinemas</span></div><div><span className="trust-number">4.9<span>★</span></span><span>loved by<br/>film lovers</span></div><div className="trust-note">GOOD STORIES. GREAT SEATS.<br/><b>YOUR NIGHT STARTS HERE.</b></div></section>
-      <section className="film-section" id="films"><div className="section-heading"><div><div className="eyebrow muted-eyebrow">HANDPICKED FOR YOU</div><h2>Find your <em>next favourite.</em></h2></div><button className="view-all" onClick={() => { setGenre('All films'); document.querySelector('.filter-row')?.scrollIntoView({ behavior: 'smooth', block: 'center' }) }}>View all films <Icon name="arrow" size={16}/></button></div>
-        <div className="filter-row"><div className="genre-tabs">{genres.map(g => <button key={g} className={genre === g ? 'genre-active' : ''} onClick={() => setGenre(g)}>{g}</button>)}</div><label className="search-field"><Icon name="search" size={17}/><input value={query} onChange={e => setQuery(e.target.value)} placeholder="Search films..." aria-label="Search films"/></label></div>
-        <div className="movie-grid">{filtered.map((m, i) => <article className="movie-card" key={m.id} style={{ '--delay': `${i * 70}ms` }}><button className="poster-button" onClick={() => openMovie(m)} aria-label={`View ${m.title}`}><img className="poster" src={poster(m)} alt={`${m.title} movie artwork`} loading="lazy"/><span className="movie-tag">{m.tag}</span><span className="poster-cta">Discover film <Icon name="arrow" size={14}/></span><span className="poster-rating"><Icon name="star" size={13}/>{m.rating}</span></button><div className="movie-info"><button onClick={() => openMovie(m)} className="movie-title">{m.title}</button><div className="movie-meta">{m.genre}<i/> {m.duration}<i/> {m.language}</div></div></article>)}</div>
-        {filtered.length === 0 && <div className="empty-state">No films match “{query}”. Try another title or genre.</div>}
-      </section>
-      <section className="quote-band"><div className="quote-mark">“</div><p>There’s nothing quite like the dark, the hush,<br/>and a story that takes you <em>somewhere else.</em></p><span>— THE REEL HOUSE PROMISE</span><div className="quote-orb"/></section>
-      <footer className="footer"><a className="brand" href="#home"><span className="brand-mark"><Icon name="film" size={19}/></span><span>reel<span className="brand-dot">.</span>house</span></a><span>GOOD STORIES LIVE HERE.</span><span>© 2025 REEL HOUSE CINEMAS</span></footer>
-    </main>}
-
-    {view === 'detail' && <main className="subpage"><button className="back-link" onClick={() => setView('home')}>← &nbsp;Back to films</button><div className="detail-layout"><img className="detail-poster" src={poster(selected, 1000)} alt={`${selected.title} artwork`}/><div className="detail-copy"><div className="eyebrow muted-eyebrow">{selected.tag}</div><h1>{selected.title}</h1><div className="detail-stats"><span><Icon name="star" size={15}/> {selected.rating} <small>/ 10</small></span><i/>{selected.genre}<i/>{selected.duration}<i/>{selected.language}</div><p>{selected.description}</p><div className="detail-facts"><div><span>DIRECTOR</span><b>Denis Villeneuve</b></div><div><span>RELEASE</span><b>March 1, 2024</b></div><div><span>RATING</span><b>PG-13</b></div></div><button className="primary-button detail-book" onClick={() => startBooking(selected)}>Choose a showtime <Icon name="arrow" size={17}/></button><div className="detail-small">Tickets from <b>$14.50</b> · Booking takes about 2 minutes</div></div></div></main>}
-
-    {view === 'booking' && <main className="subpage booking-page"><button className="back-link" onClick={() => setView('detail')}>← &nbsp;Back to {selected.title}</button><div className="booking-header"><div><div className="eyebrow muted-eyebrow">YOUR NIGHT OUT</div><h1>Pick your <em>perfect seat.</em></h1><p>Choose a theatre, a showtime, then make yourself comfortable.</p></div><div className="booking-movie-mini"><img src={poster(selected, 160)} alt=""/><div><b>{selected.title}</b><span>{selected.duration} · {selected.language}</span></div></div></div>
-      <div className="booking-columns"><div className="booking-main"><section className="booking-block"><div className="booking-label"><span>01</span><h3>Choose a date</h3></div><div className="date-options">{dates.map((d, i) => <button key={d.full} className={date === i ? 'date-option date-active' : 'date-option'} onClick={() => setDate(i)}><span>{d.day}</span><b>{d.num}</b><small>{i === 0 ? 'TODAY' : ''}</small></button>)}</div></section>
-        <section className="booking-block"><div className="booking-label"><span>02</span><h3>Choose a cinema</h3></div><div className="theatre-select"><Icon name="pin" size={18}/><select value={theatre} onChange={e => setTheatre(e.target.value)}><option>The Lumière — Downtown</option><option>Atlas Cinema — West Village</option><option>Picturehouse — Brooklyn</option></select><span className="theatre-distance">0.8 mi</span></div><div className="showtime-options">{['1:15 PM', '4:30 PM', '7:30 PM', '10:15 PM'].map(t => <button key={t} onClick={() => setShowtime(t)} className={showtime === t ? 'time-option time-active' : 'time-option'}>{t}<small>{t === '7:30 PM' ? 'STANDARD' : 'DOLBY ATMOS'}</small></button>)}</div></section>
-        <section className="booking-block seat-block">
-          <div className="booking-label"><span>03</span><h3>Choose your seats</h3></div>
-          <div className="screen-wrap"><div className="screen"/><span>SCREEN</span></div>
-          <div className="seat-legend"><span><i className="seat-available"/> Available</span><span><i className="seat-selected"/> Selected</span><span><i className="seat-booked"/> Taken</span></div>
-          <div className="seat-grid-wrap">
-            <div className="row-letters">{Array.from({ length: 8 }, (_, i) => <span key={i}>{String.fromCharCode(65 + i)}</span>)}</div>
-            <div className="seat-grid">{Array.from({ length: 8 }, (_, r) => (
-              <div className="seat-row" key={r}>{Array.from({ length: 10 }, (_, c) => {
-                const id = `${String.fromCharCode(65 + r)}${c + 1}`
-                const taken = [3, 7, 14, 22, 28, 34, 45, 56, 64, 71].includes(r * 10 + c)
-                return <button aria-label={`Seat ${id}${taken ? ', booked' : seats.includes(id) ? ', selected' : ''}`} key={id} disabled={taken} onClick={() => toggleSeat(id)} className={`seat ${taken ? 'seat-taken' : ''} ${seats.includes(id) ? 'seat-picked' : ''}`}/>
-              })}</div>
-            ))}</div>
-          </div>
-          <div className="seat-note">You can select up to 8 seats per booking.</div>
-        </section></div>
-        <aside className="summary-card"><div className="summary-top"><span>YOUR ORDER</span><span className="summary-step">01 / 02</span></div><div className="summary-film"><img src={poster(selected, 160)} alt=""/><div><b>{selected.title}</b><span>{selected.genre} · {selected.duration}</span></div></div><div className="summary-line"><span><Icon name="pin" size={15}/> {theatre.split(' — ')[0]}</span><b>{showtime}</b></div><div className="summary-line"><span>{dates[date].day}, {dates[date].num}</span><span>Standard</span></div><div className="summary-divider"/><div className="summary-seats"><span>SEATS <small>{seats.length ? seats.join(', ') : 'Select your seats'}</small></span><b>{seats.length ? `$${(seats.length * 14.5).toFixed(2)}` : '—'}</b></div><div className="summary-line fee"><span>Booking fee</span><span>{seats.length ? `$${(seats.length * 1.5).toFixed(2)}` : '—'}</span></div><div className="summary-total"><span>Total</span><b>{seats.length ? `$${(seats.length * 16).toFixed(2)}` : '$—'}</b></div><button className="primary-button checkout-button" disabled={!seats.length} onClick={reserve}>Continue to checkout <Icon name="arrow" size={16}/></button><div className="secure-note">⌑ &nbsp;Secure checkout · No account needed</div><div className="cancel-note">Free cancellation up to 2 hours before the show.</div></aside></div></main>}
-
-    {view === 'confirmation' && booking && <main className="subpage confirmation-page"><div className="confirmation-card"><div className="confirmation-icon">✓</div><div className="eyebrow muted-eyebrow">IT’S A DATE</div><h1>Your seats are <em>waiting.</em></h1><p className="confirm-intro">Your booking is confirmed. We’ve saved the details below for your movie night.</p><div className="ticket-card"><div className="ticket-main"><img src={poster(booking.movie, 280)} alt=""/><div className="ticket-details"><span className="movie-tag static-tag">CONFIRMED</span><h2>{booking.movie.title}</h2><span>{booking.movie.genre} · {booking.movie.duration} · {booking.movie.language}</span><div className="ticket-meta"><div><small>DATE & TIME</small><b>{booking.date}<br/>{booking.showtime}</b></div><div><small>THEATRE</small><b>{booking.theatre}</b></div><div><small>YOUR SEATS</small><b>{booking.seats.join(', ')}</b></div></div></div></div><div className="ticket-stub"><span>BOOKING CODE</span><b>{booking.code}</b><div className="barcode">▌▌▏▌▌▏▏▌▌▌▏▌▏▏▌▌▏▌▌▌▏▏▌</div><small>Show this at the entrance</small></div></div><button className="primary-button" onClick={() => { setView('home'); setBooking(null); setSeats([]) }}>Back to discover <Icon name="arrow" size={16}/></button></div></main>}
-
-    {auth && <div className="modal-backdrop" onMouseDown={e => { if (e.target === e.currentTarget) setAuth('') }}><div className="auth-modal"><button className="modal-close" onClick={() => setAuth('')} aria-label="Close"><Icon name="close"/></button><div className="brand modal-brand"><span className="brand-mark"><Icon name="film" size={19}/></span><span>reel<span className="brand-dot">.</span>house</span></div><div className="eyebrow muted-eyebrow">YOUR FRONT ROW STARTS HERE</div><h2>{auth}</h2><p>Keep your tickets close and your next movie night closer.</p><form onSubmit={e => { e.preventDefault(); setAuth(''); setView('home') }}><label>Email address<input required type="email" placeholder="you@example.com"/></label><label>Password<input required type="password" placeholder="At least 8 characters" minLength="8"/></label><button className="primary-button auth-submit" type="submit">{auth === 'Sign in' ? 'Sign in' : 'Create account'} <Icon name="arrow" size={16}/></button></form><div className="auth-switch">{auth === 'Sign in' ? 'New to Reel House?' : 'Already have an account?'} <button onClick={() => setAuth(auth === 'Sign in' ? 'Create account' : 'Sign in')}>{auth === 'Sign in' ? 'Create account' : 'Sign in'}</button></div><div className="auth-legal">By continuing, you agree to our Terms of Service and Privacy Policy.</div></div></div>}
-  </div>
+  return <BookingProvider><BrowserRouter><OpeningSequence/><Routes>
+    <Route element={<SiteLayout/>}>
+      <Route index element={<Home/>}/>
+      <Route path="movies" element={<Movies/>}/>
+      <Route path="movies/:movieId" element={<MovieDetails/>}/>
+      <Route path="seats/:movieId" element={<SeatSelection/>}/>
+      <Route path="checkout/:movieId" element={<Checkout/>}/>
+      <Route path="confirmation" element={<Confirmation/>}/>
+    </Route>
+    <Route path="login" element={<AuthLayout><AuthPage mode="login"/></AuthLayout>}/>
+    <Route path="signup" element={<AuthLayout><AuthPage mode="signup"/></AuthLayout>}/>
+    <Route path="*" element={<AuthLayout><main className="page not-found"><span className="section-kicker">404 · LOST IN THE DARK</span><h1>There’s no movie here.</h1><a className="button button-red" href="/">Back to CineVerse</a></main></AuthLayout>}/>
+  </Routes></BrowserRouter></BookingProvider>
 }
 
 export default App

@@ -1,6 +1,30 @@
-# Reel House
+# CineVerse
 
-A responsive movie discovery and ticket booking experience built with React, Vite, and Tailwind CSS.
+A cinematic, responsive movie ticket booking experience built with React, Vite, Tailwind CSS, React Router, Lucide icons, and Framer Motion.
+
+## Features
+
+- Cinematic home page with featured, now showing, trending, and coming soon films.
+- 20-film sample catalogue with title-matched poster artwork, including new F1, Superman, Sinners, and Minecraft titles.
+- Movie discovery with title search, genre, language, and rating filters, sorting, and empty states.
+- Movie detail pages with synopsis, cast and crew, rating, trailer, city-specific cinemas, formats, dates, and showtimes.
+- Interactive A–J seat map with numbered seats, unavailable seats, classic, premium, and recliner pricing.
+- Live booking totals, validated customer checkout, printable demo ticket, and booking reference.
+- Responsive login and sign-up demo flows with show/hide password controls.
+- Motion effects, keyboard focus styles, reduced-motion support, and mobile navigation.
+- A skippable cinematic welcome sequence that plays once per browser session.
+
+## Screenshots
+
+Capture the home, movie discovery, seat selection, checkout, and confirmation screens at desktop and mobile sizes for the assignment submission. The attached CineVerse reference image shows the intended screen sequence.
+
+## Technology
+
+- React 19 and Vite
+- Tailwind CSS 4
+- React Router DOM
+- Lucide React
+- Framer Motion
 
 ## Run locally
 
@@ -9,29 +33,46 @@ npm install
 npm run dev
 ```
 
-## Production build
+Open the local URL printed by Vite.
+
+## Verify and build
 
 ```sh
+npm run lint
 npm run build
 npm run preview
 ```
 
-## Features
+The production output is written to `dist/`.
 
-- Search and filter the current film selection.
-- View film details, ratings, and showtime booking options.
-- Select a cinema, date, showtime, and up to eight seats.
-- Review a live ticket total and see a booking confirmation.
-- Responsive layouts and sign-in/create-account screens.
+## Demo limitations
 
-The booking and account flows are front-end demos. They do not connect to a payment processor, ticketing service, or account backend. Film artwork is loaded from Unsplash.
+This is a frontend assignment demo. Movie, cinema, and showtime data are sample data. Bookings and selections are stored in the current browser session for refresh continuity. Checkout does not connect to a payment gateway, and confirmation does not reserve real cinema seats. Login and sign-up do not create or authenticate real accounts. Movie artwork and trailer playback load from external image and video services.
 
-## Deploy
+## GitHub
 
-### Netlify
+Create an empty repository on GitHub, then run these commands from the project folder:
 
-Import the GitHub repository in Netlify and use the `npm run build` build command with `dist` as the publish directory. The included `public/_redirects` keeps the app routes working on refresh.
+```sh
+git init -b main
+git add .
+git commit -m "Build CineVerse movie ticket booking website"
+git remote add origin https://github.com/YOUR_USERNAME/cineverse-movie-booking.git
+git push -u origin main
+```
 
-### Vercel
+If this project already has Git history, add the new repository as `origin` and push the current `main` branch.
 
-Import the repository in Vercel. Vite is detected automatically; use `npm run build` and `dist` as the output directory.
+## Deploy to Netlify
+
+1. Import the GitHub repository in Netlify.
+2. Set the build command to `npm run build`.
+3. Set the publish directory to `dist`.
+4. Deploy. `public/_redirects` includes the single-page-app fallback.
+
+## Deploy to Vercel
+
+1. Import the GitHub repository in Vercel.
+2. Select the Vite framework preset.
+3. Use `npm run build` as the build command and `dist` as the output directory.
+4. Deploy. `vercel.json` rewrites app routes to the SPA entry point.
